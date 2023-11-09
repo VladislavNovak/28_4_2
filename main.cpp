@@ -3,6 +3,8 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
+#include "constants.h"
+#include "utilities.h"
 #include "Train.h"
 #include "Station.h"
 
@@ -12,60 +14,75 @@ using std::vector;
 
 // Регулирует асинхронное размещение в station.waitingLine
 std::mutex watchStation;
-// Регулирует вывод сообщений в каждом потоке
-std::mutex watchCycle;
 
-void asyncCountdown(Train* train, Station* station) {
-
+// Поток для каждого конкретного поезда
+void trainHandler(Train* train, Station* station) {
+    // Отсчитываем время для каждого поезда
     for (int i = 0; i < train->getTravelTime(); ++i) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        watchCycle.lock();
-        if (i != train->getTravelTime() - 1) {
-            cout << "(" << i << ") Train #" << train->getId() << " on the way" << endl;
-        }
-        watchCycle.unlock();
     }
 
+    // Прибытие на станцию. Будем лишь помещать id поезда.
+    // Блокируем поток, чтобы добавление новых позиций в массив не пересекалось:
     watchStation.lock();
     station->addArrivingTrain(train->getId());
     watchStation.unlock();
 }
 
-int main() {
-    Station station;
-    const int TRAINS_COUNT = 4;
+void menuHandler(Station *station) {
+    std::vector<std::string> menuTitles = { "exit", "depart" };
 
-    vector<Train*> trains;
-    trains.reserve(TRAINS_COUNT);
-    vector<int> travelTimes = { 5, 10, 10, 10 };
+    while (true) {
+        if (station->hasTrain()) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            int command = selectMenuItem(menuTitles);
 
-    for (int i = 0; i < TRAINS_COUNT; ++i) {
-        trains.emplace_back(new Train(i, travelTimes[i]));
+            if (command == static_cast<int>(Menu::EXIT)) { return; }
+            else if (command == static_cast<int>(Menu::DEPART)) {
+                station->doDepart();
+                if (!station->hasTrain()) { return; }
+                station->printTrainList();
+            }
+        }
     }
+}
 
-    vector<std::thread> threads(TRAINS_COUNT);
-
-    for (int i = 0; i < TRAINS_COUNT; ++i) {
-        threads.emplace_back(asyncCountdown, trains[i], &station);
-    }
-
-    cout << "Start" << endl;
-    for (auto &thread : threads) { if (thread.joinable()) { thread.join(); }}
-
-    station.printTrainList();
-    station.sentTrainOut();
-    station.printTrainList();
-    station.sentTrainOut();
-    station.printTrainList();
-    station.sentTrainOut();
-    station.printTrainList();
-    station.sentTrainOut();
-    station.printTrainList();
-    station.sentTrainOut();
-    station.printTrainList();
-
+void clearHeap(vector<Train*> &trains) {
+    cout << "LOG:Deleted heap" << endl;
+    if (trains.empty()) { return; }
     for (auto &train : trains) { delete train; }
     trains.clear();
+}
+
+int main() {
+    vector<int> times = { 1, 5, 10, 10, 10, 14 };
+    // Будет регистрировать прибытие новых поездов
+    Station station;
+
+    vector<Train*> trains;
+    trains.reserve(times.size());
+    // Количество времени, которое затрачивает каждый поезд до прибытия на вокзал. Нужно для тестирования
+
+    for (int i = 0; i < times.size(); ++i) {
+        trains.emplace_back(new Train(i, times[i]));
+    }
+
+    // Создаем потоки по количеству поездов (просто для отработки многопоточности):
+    vector<std::thread> threads(times.size());
+
+    // Каждый поезд отправляется своим потоком
+    for (int i = 0; i < times.size(); ++i) {
+        threads.emplace_back(trainHandler, trains[i], &station);
+    }
+
+    std::thread menuThread(menuHandler, &station);
+
+    for (auto &thread : threads) { if (thread.joinable()) { thread.join(); }}
+    if (menuThread.joinable()) { menuThread.join(); }
+
+    clearHeap(trains);
+
+    cout << "THE END!" << endl;
 
     return 0;
 }

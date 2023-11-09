@@ -1,56 +1,34 @@
 #include "../headers/Station.h"
 
+bool Station::hasTrain() const { return !list.empty(); }
+
 // Если нужно отправить поезд
-int Station::sentTrainOut() {
-    // Если вокзал и очередь ожидания пусты, возвращаем -1;
-    if (currentTrain == EMPTY_PLATFORM && waitingLine.empty()) {
-        cout << "There are no trains at the station!" << endl;
-        return EMPTY_PLATFORM;
-    }
+int Station::doDepart() {
+    if (list.empty()) { return -1; }
 
-    int runawayTrain = EMPTY_PLATFORM;
-    if (currentTrain != EMPTY_PLATFORM) {
-        runawayTrain = currentTrain;
-        cout << "Train #" << currentTrain << " left the platform" << endl;
-        currentTrain = EMPTY_PLATFORM;
-    }
+    cout << "Train #" << list[0] << " sent out from platform." << endl;
+    if (list.size() > 1) { cout << "Train #" << list[1] << " arrive on platform from a siding." << endl; }
 
-    if (!waitingLine.empty()) {
-        currentTrain = popFront<int>(waitingLine);
-        cout << "Train #" << currentTrain << " has arrived on platform from the waiting line" << endl;
-    }
-
-    // Если понадобятся данные об ушедшем поезде
-    return runawayTrain;
+    return popFront(list);
 }
 
 // Поезд пришёл на вокзал
 void Station::addArrivingTrain(int id) {
-    cout << "Train #" << id;
-    // Если он пуст, сразу помещаем поезд на перон:
-    if (currentTrain == EMPTY_PLATFORM && waitingLine.empty()) {
-        cout << " arrived at the platform" << endl;
-        currentTrain = id;
-    }
-        // иначе - в очередь ожидания:
-    else {
-        cout << " stood in a waiting line" << endl;
-        waitingLine.emplace_back(id);
-    }
+    list.emplace_back(id);
+
+    cout << "Train #" << id << " arrive";
+    if (list.size() == 1) { cout << " on platform." << endl; }
+    else { cout << " and is waiting on the siding." << endl; }
 }
 
 void Station::printTrainList() {
-    if (currentTrain != EMPTY_PLATFORM) {
-        cout << "Train #" << currentTrain << " at the platform" << endl;
-    }
-
-    if (!waitingLine.empty()) {
-        cout << "Trains on waiting line: ";
-        for (const auto &id : waitingLine) { cout << id << ", "; }
+    if (list.empty()) { cout << "Station is empty." << endl; }
+    else {
+        cout << "STATION: Train #" << list[0] << " at the platform.";
+        if (list.size() > 1) {
+            cout << " Trains waiting: ";
+            for (const auto &id : list) { cout << id << ((id != list[list.size() - 1]) ? ", " : ""); }
+        }
         cout << endl;
-    }
-
-    if (currentTrain == EMPTY_PLATFORM && waitingLine.empty()) {
-        cout << "Station is empty" << endl;
     }
 }

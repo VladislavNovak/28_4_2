@@ -3,11 +3,12 @@ cmake_minimum_required(VERSION 3.26)
 add_executable(
         28_4_2
         ../main.cpp
-        Station.cpp
         utilities.cpp
-        ../headers/Station.h
-        ../headers/utilities.h
+        Station.cpp
         Train.cpp
+        ../headers/constants.h
+        ../headers/utilities.h
+        ../headers/Station.h
         ../headers/Train.h
 )
 

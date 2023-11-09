@@ -10,12 +10,12 @@ using std::endl;
 using std::vector;
 
 class Station {
-    const int EMPTY_PLATFORM = -1;
-    int currentTrain = EMPTY_PLATFORM;
-    vector<int> waitingLine{};
+    vector<int> list{};
 public:
+    [[nodiscard]] bool hasTrain() const;
+
     // Если нужно отправить поезд
-    int sentTrainOut();
+    int doDepart();
 
     // Поезд пришёл на вокзал
     void addArrivingTrain(int id);
