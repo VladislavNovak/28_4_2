@@ -28,7 +28,13 @@
 <details open>
 <summary><span style="color:tomato;font-size:12px">INFO</span></summary>
 
-[//]: # (<a href="" style="margin-left:16px">REF</a>)
+<a href="https://radioprog.ru/post/1403" style="margin-left:16px">Многопоточность в C++. Управление потоками</a>
+
+<a href="https://nuancesprog.ru/p/5452/" style="margin-left:16px">многопоточность, конкурентность и параллелизм</a>
+
+<a href="https://raymii.org/s/articles/Cpp_async_threads_and_user_input.html" style="margin-left:16px">C++ async, threads and user input</a>
+
+<a href="https://stackoverflow.com/questions/32350909/taking-input-over-standard-i-o-in-multithreaded-application" style="margin-left:16px">Taking input over standard I/O in multithreaded application</a>
 
 </details>
 </details>
