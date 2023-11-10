@@ -11,8 +11,14 @@ using std::vector;
 
 class Station {
     vector<int> list{};
+    // Ожидаемое количество. Будет уменьшаться с каждым прибывшим поездом
+    int expected = 0;
 public:
     [[nodiscard]] bool hasTrain() const;
+
+    void setExpected(int count);
+
+    [[nodiscard]] int getExpected() const;
 
     // Если нужно отправить поезд
     int doDepart();

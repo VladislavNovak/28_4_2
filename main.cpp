@@ -16,7 +16,7 @@ using std::vector;
 std::mutex watchStation;
 
 // Поток для каждого конкретного поезда
-void trainHandler(Train* train, Station* station) {
+void trainsHandler(Train* train, Station* station) {
     // Отсчитываем время для каждого поезда
     for (int i = 0; i < train->getTravelTime(); ++i) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -40,7 +40,8 @@ void menuHandler(Station *station) {
             if (command == static_cast<int>(Menu::EXIT)) { return; }
             else if (command == static_cast<int>(Menu::DEPART)) {
                 station->doDepart();
-                if (!station->hasTrain()) { return; }
+                // Автоматически выходим, если поездов нет ни на станции, ни в пути
+                if (!station->hasTrain() && !station->getExpected()) { return; }
                 station->printTrainList();
             }
         }
@@ -55,24 +56,26 @@ void clearHeap(vector<Train*> &trains) {
 }
 
 int main() {
-    vector<int> times = { 1, 5, 10, 10, 10, 14 };
+    int trainCount = 6;
     // Будет регистрировать прибытие новых поездов
     Station station;
+    station.setExpected(trainCount);
+    // Создаем потоки по количеству поездов (просто для отработки многопоточности):
+    vector<std::thread> threads(trainCount);
 
     vector<Train*> trains;
-    trains.reserve(times.size());
-    // Количество времени, которое затрачивает каждый поезд до прибытия на вокзал. Нужно для тестирования
+    trains.reserve(trainCount);
 
-    for (int i = 0; i < times.size(); ++i) {
-        trains.emplace_back(new Train(i, times[i]));
+    cout << "Number of train: " << trainCount << ". Enter travel time for each one" << endl;
+    for (int i = 0; i < trainCount; ++i) {
+        trains.emplace_back(new Train(i, putNumeric({1, 20}, ("for train #" + std::to_string(i)))));
     }
 
-    // Создаем потоки по количеству поездов (просто для отработки многопоточности):
-    vector<std::thread> threads(times.size());
+    cout << "START!" << endl;
 
     // Каждый поезд отправляется своим потоком
-    for (int i = 0; i < times.size(); ++i) {
-        threads.emplace_back(trainHandler, trains[i], &station);
+    for (int i = 0; i < trainCount; ++i) {
+        threads.emplace_back(trainsHandler, trains[i], &station);
     }
 
     std::thread menuThread(menuHandler, &station);

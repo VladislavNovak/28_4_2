@@ -2,6 +2,11 @@
 
 bool Station::hasTrain() const { return !list.empty(); }
 
+// Соответствует кол. поездов, которые в пути. Будет уменьшаться с каждым прибывшим на станцию поездом
+void Station::setExpected(int count) { expected = count; }
+
+int Station::getExpected() const { return expected; }
+
 // Если нужно отправить поезд
 int Station::doDepart() {
     if (list.empty()) { return -1; }
@@ -15,10 +20,12 @@ int Station::doDepart() {
 // Поезд пришёл на вокзал
 void Station::addArrivingTrain(int id) {
     list.emplace_back(id);
+    --expected;
 
-    cout << "Train #" << id << " arrive";
+    cout << "ACTION:  Train #" << id << " arrive";
     if (list.size() == 1) { cout << " on platform." << endl; }
     else { cout << " and is waiting on the siding." << endl; }
+    printTrainList();
 }
 
 void Station::printTrainList() {
@@ -27,7 +34,10 @@ void Station::printTrainList() {
         cout << "STATION: Train #" << list[0] << " at the platform.";
         if (list.size() > 1) {
             cout << " Trains waiting: ";
-            for (const auto &id : list) { cout << id << ((id != list[list.size() - 1]) ? ", " : ""); }
+            for (int i = 1; i < list.size(); ++i) {
+                int id = list[i];
+                cout << id << (id != list[list.size() - 1] ? ", " : "");
+            }
         }
         cout << endl;
     }
