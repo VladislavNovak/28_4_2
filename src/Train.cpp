@@ -6,5 +6,6 @@ Train::Train(int inId, int inTimeSpent) {
 }
 
 [[nodiscard]] int Train::getId() const { return id; }
+
 [[nodiscard]] int Train::getTravelTime() const { return travelTime; }
 

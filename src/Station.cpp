@@ -1,4 +1,4 @@
-#include "../headers/Station.h"
+#include "Station.h"
 
 bool Station::hasTrain() const { return !list.empty(); }
 
