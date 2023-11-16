@@ -16,7 +16,7 @@ using std::vector;
 std::mutex watchStation;
 
 // Поток для каждого конкретного поезда
-void trainsHandler(Train* train, Station* station) {
+void trainThread(Train* train, Station* station) {
     // Отсчитываем время для каждого поезда
     for (int i = 0; i < train->getTravelTime(); ++i) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -29,7 +29,7 @@ void trainsHandler(Train* train, Station* station) {
     watchStation.unlock();
 }
 
-void menuHandler(Station *station) {
+void menuThread(Station *station) {
     std::vector<std::string> menuTitles = { "exit", "depart" };
 
     while (true) {
@@ -39,12 +39,23 @@ void menuHandler(Station *station) {
 
             if (command == static_cast<int>(Menu::EXIT)) { return; }
             else if (command == static_cast<int>(Menu::DEPART)) {
+                watchStation.lock();
                 station->doDepart();
+                watchStation.unlock();
                 // Автоматически выходим, если поездов нет ни на станции, ни в пути
                 if (!station->hasTrain() && !station->getExpected()) { return; }
                 station->printTrainList();
             }
         }
+    }
+}
+
+void initialTrains(vector<Train*> &trains, int trainCount) {
+    trains.reserve(trainCount);
+
+    cout << "Number of train: " << trainCount << ". Enter travel time for each one" << endl;
+    for (int i = 0; i < trainCount; ++i) {
+        trains.emplace_back(new Train(i, putNumeric({1, 20}, ("for train #" + std::to_string(i)))));
     }
 }
 
@@ -60,28 +71,23 @@ int main() {
     // Будет регистрировать прибытие новых поездов
     Station station;
     station.setExpected(trainCount);
-    // Создаем потоки по количеству поездов (просто для отработки многопоточности):
-    vector<std::thread> threads(trainCount);
 
     vector<Train*> trains;
-    trains.reserve(trainCount);
+    initialTrains(trains, trainCount);
 
-    cout << "Number of train: " << trainCount << ". Enter travel time for each one" << endl;
-    for (int i = 0; i < trainCount; ++i) {
-        trains.emplace_back(new Train(i, putNumeric({1, 20}, ("for train #" + std::to_string(i)))));
-    }
-
+    cout << "NOTE: After the first train arrives at the station, you can enter 'depart' or 'exit'" << endl;
     cout << "START!" << endl;
 
+    // Создаем потоки по количеству поездов
+    vector<std::thread> runTrains(trainCount);
     // Каждый поезд отправляется своим потоком
-    for (int i = 0; i < trainCount; ++i) {
-        threads.emplace_back(trainsHandler, trains[i], &station);
-    }
+    for (const auto &train : trains) { runTrains.emplace_back(trainThread, train, &station); }
 
-    std::thread menuThread(menuHandler, &station);
+    // Параллельно запускаем поток для меню
+    std::thread runMenu(menuThread, &station);
 
-    for (auto &thread : threads) { if (thread.joinable()) { thread.join(); }}
-    if (menuThread.joinable()) { menuThread.join(); }
+    for (auto &thread : runTrains) { if (thread.joinable()) { thread.join(); }}
+    if (runMenu.joinable()) { runMenu.join(); }
 
     clearHeap(trains);
 
